@@ -6,9 +6,12 @@ class WP_Better_HipChat_Event_Payload {
 	 * @var array
 	 */
 	private $setting;
+	
+	private $colour;
 
-	public function __construct( array $setting ) {
+	public function __construct( array $setting, $color ) {
 		$this->setting = $setting;
+		$this->colour = $color;
 	}
 
 	public function get_url() {
@@ -22,6 +25,7 @@ class WP_Better_HipChat_Event_Payload {
 		return json_encode( array(
 			'notify'  => true,
 			'message' => $this->setting['message'],
+			'color'  => $this->colour
 		) );
 	}
 }

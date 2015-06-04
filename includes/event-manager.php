@@ -79,6 +79,7 @@ class WP_Better_HipChat_Event_Manager {
 				'action'      => 'transition_post_status',
 				'description' => __( 'When a post is published', 'better-hipchat' ),
 				'default'     => true,
+				'colour'      => 'green',
 				'message'     => function( $new_status, $old_status, $post ) use ( $notified_post_types ) {
 					
 					if ( ! in_array( $post->post_type, $notified_post_types ) ) {
@@ -102,6 +103,7 @@ class WP_Better_HipChat_Event_Manager {
 				'action'      => 'transition_post_status',
 				'description' => __( 'When a post needs review', 'better-hipchat' ),
 				'default'     => false,
+				'colour'      => 'yellow',
 				'message'     => function( $new_status, $old_status, $post ) use ( $notified_post_types ) {
 
 					if ( ! in_array( $post->post_type, $notified_post_types ) ) {
@@ -130,6 +132,7 @@ class WP_Better_HipChat_Event_Manager {
 				'action'      => 'before_delete_post',
 				'description' => __('When a post is deleted', 'better-hipchat' ),
 				'default'     => false,
+				'colour'      => 'red',
 				'message'     => function ( $post ) {
 
 					$post = get_post($post);
@@ -153,6 +156,7 @@ class WP_Better_HipChat_Event_Manager {
 				'action'      => 'transition_post_status',
 				'description' => __('When a post is moved to the trash', 'better-hipchat' ),
 				'default'     => false,
+				'colour'      => 'yellow',
 				'message'     => function( $new_status, $old_status, $post ) use ( $notified_post_types ) {
 
 					if ( ! in_array( $post->post_type, $notified_post_types ) ) {
@@ -170,11 +174,38 @@ class WP_Better_HipChat_Event_Manager {
 					}
 				},
 			),
+			
+			'post_recovered' => array(
+				'action'      => 'post_updated',
+				'description' => __('When a is moved out of the trash', 'better-hipchat'),
+				'default'     => false,
+				'colour'      => 'yellow',
+				'message'     => function( $post, $post_after, $post_before ) use ( $notified_post_types ) {
+					$post = get_post( $post );
+
+					if ( ! in_array( $post->post_type, $notified_post_types ) ) {
+						return false;
+					}
+
+					if ( 'trash' === $post_before->post_status && 'trash' !== $post_after->post_status ) {
+
+						return sprintf(
+							'%4$s recovered from trash: <a href="%1$s"><strong>%2$s</strong></a> by <strong>%3$s</strong>',
+							admin_url( sprintf( 'post.php?post=%d&action=edit', $post->ID ) ),
+							get_the_title( $post->ID ),
+							wp_get_current_user()->display_name,
+							ucfirst($post->post_type)
+						);
+
+					}
+				},
+			),
 
 			'post_updated' => array(
 				'action'      => 'post_updated',
 				'description' => __('When a post has been edited', 'better-hipchat'),
 				'default'     => false,
+				'colour'      => 'green',
 				'message'     => function( $post, $post_after, $post_before ) use ( $notified_post_types ) {
 					$post = get_post( $post );
 
@@ -189,17 +220,7 @@ class WP_Better_HipChat_Event_Manager {
 						return false;
 					}
 
-					if ( 'trash' === $post_before->post_status && 'trash' !== $post_after->post_status ) {
-
-						return sprintf(
-							'%4$s recovered from trash: <a href="%1$s"><strong>%2$s</strong></a> by <strong>%3$s</strong>',
-							admin_url( sprintf( 'post.php?post=%d&action=edit', $post->ID ) ),
-							get_the_title( $post->ID ),
-							wp_get_current_user()->display_name,
-							ucfirst($post->post_type)
-						);
-
-					} else {
+					if ( 'trash' !== $post_before->post_status || 'trash' === $post_after->post_status ) {
 
 						return sprintf(
 							'%5$s edited: <a href="%1$s"><strong>%2$s</strong></a> by <strong>%3$s</strong>
@@ -221,6 +242,7 @@ class WP_Better_HipChat_Event_Manager {
 				'action'      => 'activated_plugin',
 				'description' => __('When a plugin is activated', 'better-hipchat'),
 				'default'     => false,
+				'colour'      => 'red',
 				'message'     => function( $plugin, $network_activation ) {
 					return sprintf(
 						'Plugin activated by <strong>%1$s</strong>:
@@ -234,10 +256,11 @@ class WP_Better_HipChat_Event_Manager {
 			),
 
 			'plugin_deactivated' => array(
-				'action'        => 'deactivated_plugin',
-				'description'   => __('When a plugin is deactivated', 'better-hipchat'),
-				'default'       => false,
-				'message'       => function( $plugin, $network_activation ) {
+				'action'      => 'deactivated_plugin',
+				'description' => __('When a plugin is deactivated', 'better-hipchat'),
+				'default'     => false,
+				'colour'      => 'red',
+				'message'     => function( $plugin, $network_activation ) {
 					return sprintf(
 						'Plugin deactivated by <strong>%1$s</strong>:
 						<br>
@@ -272,7 +295,7 @@ class WP_Better_HipChat_Event_Manager {
 			if ( ! empty( $message ) ) {
 				$setting['message'] = $message;
 
-				$notifier->notify( new WP_Better_HipChat_Event_Payload( $setting ) );
+				$notifier->notify( new WP_Better_HipChat_Event_Payload( $setting, $event['colour'] ) );
 			}
 		};
 		add_action( $event['action'], $callback, null, 5 );
