@@ -161,7 +161,7 @@ class WP_Better_HipChat_Post_Meta_Box {
 				'message'    => __( 'Test sending payload!', 'better-hipchat' ),
 			);
 
-			$resp = $this->plugin->notifier->notify( new WP_Better_HipChat_Event_Payload( $payload ) );
+			$resp = $this->plugin->notifier->notify( new WP_Better_HipChat_Event_Payload( $payload, 'gray' ) );
 
 			if ( is_wp_error( $resp ) ) {
 				throw new Exception( $resp->get_error_message() );
